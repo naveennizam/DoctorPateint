@@ -1,8 +1,6 @@
 const User = require("../models/userModel");
-const Product = require("../models/productModel");
-const Cart = require("../models/cartModel");
-const Coupon = require("../models/couponModel");
-const Order = require("../models/orderModel");
+
+const Report = require("../models/ReportModel");
 
 const uniqid = require("uniqid");
 const asyncHandler = require("express-async-handler");
@@ -12,7 +10,6 @@ const { generateRefreshToken } = require("../config/refreshToken");
 
 const crypto = require("crypto")
 const jwt = require('jsonwebtoken');
-const sendEmail = require("./emailCtrl");
 
 
 // Creaate User means Registeration
@@ -60,16 +57,16 @@ const loginUserCtrl = asyncHandler(async (req, res) => {
     }
 });
 
-// admin logIn
+// doctor logIn
 
-const logInAdmin = asyncHandler(async (req, res) => {
+const logIndoctor = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
     //check if user exist or not
-    const findAdmin = await User.findOne({ email });
-    if (findAdmin.role !== 'admin') throw new Error('Not Authorize');
-    if (findAdmin && await findAdmin.isPasswordMatched(password)) {
-        const refreshToken = await generateRefreshToken(findAdmin?._id);
-        const updateUser = await User.findByIdAndUpdate(findAdmin.id, {
+    const finddoctor = await User.findOne({ email });
+    if (finddoctor.role !== 'doctor') throw new Error('Not Authorize');
+    if (finddoctor && await finddoctor.isPasswordMatched(password)) {
+        const refreshToken = await generateRefreshToken(finddoctor?._id);
+        const updateUser = await User.findByIdAndUpdate(finddoctor.id, {
             refreshToken: refreshToken,
         },
             { new: true }
@@ -80,36 +77,18 @@ const logInAdmin = asyncHandler(async (req, res) => {
             // 72 hours
         })
         res.json({
-            _id: findAdmin?._id,
-            firstname: findAdmin?.firstname,
-            lastname: findAdmin?.lastname,
-            email: findAdmin?.email,
-            mobile: findAdmin?.mobile,
-            token: generateToken(findAdmin?._id),
+            _id: finddoctor?._id,
+            firstname: finddoctor?.firstname,
+            lastname: finddoctor?.lastname,
+            email: finddoctor?.email,
+            mobile: finddoctor?.mobile,
+            token: generateToken(finddoctor?._id),
         });
     }
     else {
         throw new Error('Invalid Crediential')
     }
 });
-
-//Save User Address
-const saveAddress = asyncHandler(async (req, res, next) => {
-    const { _id } = req.user;
-    validatemongoodbId(_id);
-    try {
-        const addressUser = await User.findByIdAndUpdate(_id, {
-            address: req?.body?.address,
-        },
-            { new: true }
-        );
-        res.json(addressUser)
-    }
-    catch (error) {
-        throw new Error(error)
-    }
-
-})
 
 // GET all user
 const getAllUser = asyncHandler(async (req, res) => {
@@ -142,7 +121,7 @@ const getaUser = asyncHandler(async (req, res) => {
 const deleteaUser = asyncHandler(async (req, res) => {
     const { id } = req.params;
     validatemongoodbId(id);
-    //console.log(id);
+ 
     try {
         const deleteaUser = await User.findByIdAndDelete(id);
         res.json({
@@ -169,7 +148,7 @@ const handleRefreshToken = asyncHandler(async (req, res) => {
         const accessToken = generateToken(user?._id);
         res.json({ accessToken })
     });
-    // res.json(user)
+   
 });
 // LOgOut
 const logOut = asyncHandler(async (req, res) => {
@@ -222,11 +201,9 @@ const updatedUser = asyncHandler(async (req, res) => {
 // Blocked User
 
 const blockUser = asyncHandler(async (req, res) => {
-    const { id } = req.params;
+    const { id } = req.params;  // url id
     console.log(id);
     validatemongoodbId(id);
-    console.log(validatemongoodbId(id));
-
     try {
         const block = await User.findByIdAndUpdate(id, {
             isBlocked: true,
@@ -236,8 +213,7 @@ const blockUser = asyncHandler(async (req, res) => {
         );
 
         res.json({
-            message: `User blocked`,
-            block
+            message: `User blocked`
         })
     }
     catch (error) {
@@ -283,7 +259,7 @@ const updatePassword = asyncHandler(async (req, res) => {
     else {
         res.json(user);
     }
-})
+});
 
 const forgotPasswordToken = asyncHandler(async (req, res) => {
     const { email } = req.body;  //  localhost:5000/api/user/forgot-password-token
@@ -327,169 +303,58 @@ const resetPassword = asyncHandler(async (req, res) => {
 });
 
 
-const getWishList = asyncHandler(async (req, res) => {
-    const { _id } = req.user;
-    try {
-        const findUser = await User.findById(_id).populate('wishlist');
-        res.json(findUser)
-    }
-    catch (error) {
-        throw new Error(error)
-    }
-});
-
 // Card Funtionality
-const userCart = asyncHandler(async (req, res) => {
-
-    const { _id } = req.user;
+const userReport = asyncHandler(async (req, res) => {
+    const { id } = req.params;  // url user
+    const { _id } = req.user; // token doctor
     validatemongoodbId(_id);
-    const { cart } = req.body;
+    const { generateReport } = req.body;
+   
     try {
-        let products = []
-        const user = await User.findById(_id);
-        // Chexk User already have Product in Cart
-        const alreadyExistCart = await Cart.findOne({ orderby: user._id });
-        if (alreadyExistCart) {
-            alreadyExistCart.remove();
-
-        }
-        for (let i = 0; i < cart.length; i++) {
+        let REPORTS = []
+        const user = await User.findById(_id); //by doctor
+        const real = await User.findById(id);  // by user
+  const patient_Id = (real?.id);
+        
+        // Chexk User already have Product in Report
+    //// const alreadyExistReport = await Report.findOne({patient_Id : real?.id });
+     
+        for (let i = 0; i < generateReport.length; i++) {
             let object = {};
-            object.product = cart[i]._id;
-            object.count = cart[i].count;
-            object.color = cart[i].color;
-            let getPrice = await Product.findById(cart[i]._id).select('price').exec();
-            object.price = getPrice.price;
-            products.push(object);
+           
+            object.patient = generateReport[i].patient;
+            object.email = generateReport[i].email;
+            object.disease = generateReport[i].disease;
+            REPORTS.push(object);
         }
-        let cartTotal = 0;
-        for (let i = 0; i < products.length; i++) {
-            cartTotal = cartTotal + products[i].price * products[i].count;
-        }
-        let newCart = await new Cart({
-            products,
-            cartTotal,
-            orderby: user?._id,
+        
+        let newReport = await new Report({
+            DoctorName : user?.firstname+ " " +user?.lastname,
+            patient_Id,
+            REPORTS,
+            Doctor: user?._id,
+            
         }).save();
-        res.json(newCart);
+        console.log(newReport);
+        res.json(newReport);
     }
     catch (error) {
         throw new Error(error)
     }
 });
 
-const getUserCart = asyncHandler(async (req, res) => {
-    const { _id } = req.user;
+const getUserReport = asyncHandler(async (req, res) => {
+    const { _id } = req.user; // by user
     validatemongoodbId(_id);
 
     try {
-        const cart = await Cart.findOne({ orderby: _id }).populate("products.product")
-        res.json(cart)
+        
+        const getReport = await Report.find({ patient_Id : _id });
+        res.json(getReport)
     }
     catch (error) {
         throw new Error(error)
     }
 });
-const emptyCart = asyncHandler(async (req, res) => {
-    const { _id } = req.user;
-    validatemongoodbId(_id);
 
-    try {
-        const user = await User.findOne(_id);
-        const cart = await Cart.findOneAndRemove({ orderby: user._id });
-        res.json(cart)
-    }
-    catch (error) {
-        throw new Error(error)
-    }
-});
-const applyCoupon = asyncHandler(async (req, res) => {
-    const { _id } = req.user;
-    validatemongoodbId(_id);
-    const { coupon } = req.body;
-    const validCopoun = await Coupon.findOne({ name: coupon });
-    if (validCopoun == null) {
-        throw new Error("Invalid Coupon")
-    }
-    const user = await User.findOne({ _id });
-    let { cartTotal } = await Cart.findOne({ orderby: user._id }).populate("products.product");
-    let totalAfterDiscount = (cartTotal - (cartTotal * validCopoun.discount) / 100).toFixed(2);
-    await Cart.findOneAndUpdate({ orderby: user._id }, { totalAfterDiscount }, { new: true });
-    res.json(totalAfterDiscount);
-});
-const createOrder = asyncHandler(async (req, res) => {
-    const { _id } = req.user;
-    validatemongoodbId(_id);
-    const { COD, couponApplied } = req.body;
-    try {
-        if (!COD) throw new Error(`Create Cash Order Failed`);
-        const user = await User.findById(_id);
-        let userCart = await Cart.findOne({ orderby: user._id });
-        let finalAmount = 0;
-        if (couponApplied && userCart.totalAfterDiscount) {
-            finalAmount = userCart.totalAfterDiscount;
-        }
-        else {
-            finalAmount = userCart.cartTotal;
-        }
-        let newOrder = await new Order({
-            products: userCart.products,
-            paymentIntent: {
-                id: uniqid(),
-                method: "COD",
-                amount: finalAmount,
-                status: "Cash on Delivery",
-                created: Date.now(),
-                currency: "USD",
-
-            },
-            orderby: user._id,
-            orderStatus: "Cash on Delivery",
-        }).save();
-        let update = userCart.products.map((item) => {
-            return {
-                updateOne: {
-                    filter: { _id: item.product._id },
-                    update: { $inc: { quantity: -item.count, sold: +item.count } },
-                }
-            }
-        });
-        const updated = await Product.bulkWrite(update, {})
-        res.json({ message: "success" });
-
-
-    } catch (error) { throw new Error(error); }
-});
-const getOrders = asyncHandler(async (req, res) => {
-    const { _id } = req.user;
-    validatemongoodbId(_id);
-    try {
-        const userorders = await Order.findOne({ orderby: _id }).populate('products.product').exec();
-        res.json(userorders);
-    }
-    catch (error) {
-        throw new Error(error)
-    }
-
-});
-const updateOrderStatus = asyncHandler(async (req, res) => {
-    const { id } = req.params;
-    console.log(id);
-    validatemongoodbId(id);
-    const { status } = req.body;
-    try {
-        const findOrder = await Order.findByIdAndUpdate(id, {
-            orderStatus: status,
-            paymentIntent: { status: status },
-        },
-         { new: true }
-         );
-        res.json(findOrder)
-
-    }
-    catch (error) {
-        throw new Error(error);
-    }
-})
-
-module.exports = { createUser, loginUserCtrl, logInAdmin, saveAddress, getAllUser, getaUser, deleteaUser, updatedUser, blockUser, unBlockUser, handleRefreshToken, logOut, updatePassword, forgotPasswordToken, resetPassword, getWishList, userCart, getUserCart, emptyCart, applyCoupon, createOrder, getOrders, updateOrderStatus };
+module.exports = { createUser, loginUserCtrl, logIndoctor, getAllUser, getaUser, deleteaUser, updatedUser, blockUser, unBlockUser, handleRefreshToken, logOut, updatePassword, forgotPasswordToken, resetPassword,  userReport, getUserReport };

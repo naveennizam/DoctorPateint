@@ -1,4 +1,3 @@
-// const { stack } = require("../routes/authRoute");
 
 // not Found
 const notFound = (req, res, next) => {
