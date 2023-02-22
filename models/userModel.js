@@ -35,11 +35,7 @@ var userSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
-    Report: {
-        type: Array,
-        default: [],
 
-    },
   refreshToken:
     {
         type: String,

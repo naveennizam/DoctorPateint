@@ -1,7 +1,5 @@
 const User = require("../models/userModel");
-
 const Report = require("../models/ReportModel");
-
 const uniqid = require("uniqid");
 const asyncHandler = require("express-async-handler");
 const { generateToken } = require("../config/jwtToken");
@@ -10,6 +8,7 @@ const { generateRefreshToken } = require("../config/refreshToken");
 
 const crypto = require("crypto")
 const jwt = require('jsonwebtoken');
+const { loadavg } = require("os");
 
 
 // Creaate User means Registeration
@@ -105,7 +104,7 @@ const getAllUser = asyncHandler(async (req, res) => {
 const getaUser = asyncHandler(async (req, res) => {
     const { id } = req.params;
     validatemongoodbId(id);
-    //console.log(id);
+    ////console.log(validatemongoodbId(id));
     try {
         const getaUser = await User.findById(id);
         res.json({
@@ -121,7 +120,7 @@ const getaUser = asyncHandler(async (req, res) => {
 const deleteaUser = asyncHandler(async (req, res) => {
     const { id } = req.params;
     validatemongoodbId(id);
- 
+
     try {
         const deleteaUser = await User.findByIdAndDelete(id);
         res.json({
@@ -148,7 +147,7 @@ const handleRefreshToken = asyncHandler(async (req, res) => {
         const accessToken = generateToken(user?._id);
         res.json({ accessToken })
     });
-   
+
 });
 // LOgOut
 const logOut = asyncHandler(async (req, res) => {
@@ -303,39 +302,40 @@ const resetPassword = asyncHandler(async (req, res) => {
 });
 
 
-// Card Funtionality
+// Report Funtionality
 const userReport = asyncHandler(async (req, res) => {
     const { id } = req.params;  // url user
-    const { _id } = req.user; // token doctor
-    validatemongoodbId(_id);
+
+    //If Only Doctor to get Report
+  const { _id } = req.user; // token doctor
+   validatemongoodbId(_id);
     const { generateReport } = req.body;
-   
+
     try {
         let REPORTS = []
-        const user = await User.findById(_id); //by doctor
+      const user = await User.findById(_id); //by doctor
         const real = await User.findById(id);  // by user
-  const patient_Id = (real?.id);
-        
+
+        const patient_Id = (real?.id);
         // Chexk User already have Product in Report
-    //// const alreadyExistReport = await Report.findOne({patient_Id : real?.id });
-     
+        //// const alreadyExistReport = await Report.findOne({patient_Id : real?.id });
+
         for (let i = 0; i < generateReport.length; i++) {
             let object = {};
-           
+
             object.patient = generateReport[i].patient;
             object.email = generateReport[i].email;
             object.disease = generateReport[i].disease;
             REPORTS.push(object);
         }
-        
+
         let newReport = await new Report({
-            DoctorName : user?.firstname+ " " +user?.lastname,
+            DoctorName: user?.firstname + " " + user?.lastname,
             patient_Id,
             REPORTS,
-            Doctor: user?._id,
-            
+          Doctor: user?._id,
+
         }).save();
-        console.log(newReport);
         res.json(newReport);
     }
     catch (error) {
@@ -348,8 +348,9 @@ const getUserReport = asyncHandler(async (req, res) => {
     validatemongoodbId(_id);
 
     try {
-        
-        const getReport = await Report.find({ patient_Id : _id });
+
+        const getReport = await Report.find({ patient_Id: _id });
+        console.log(getReport);
         res.json(getReport)
     }
     catch (error) {
@@ -357,4 +358,4 @@ const getUserReport = asyncHandler(async (req, res) => {
     }
 });
 
-module.exports = { createUser, loginUserCtrl, logIndoctor, getAllUser, getaUser, deleteaUser, updatedUser, blockUser, unBlockUser, handleRefreshToken, logOut, updatePassword, forgotPasswordToken, resetPassword,  userReport, getUserReport };
+module.exports = { createUser, loginUserCtrl, logIndoctor, getAllUser, getaUser, deleteaUser, updatedUser, blockUser, unBlockUser, handleRefreshToken, logOut, updatePassword, forgotPasswordToken, resetPassword, userReport, getUserReport };
