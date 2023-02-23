@@ -12,7 +12,7 @@ router.put("/password", authMiddleware, updatePassword)
 router.post("/login", loginUserCtrl);
 router.post("/login-doctor", logIndoctor);
 router.post("/report/:id", authMiddleware,isdoctor, userReport);
-router.get("/report", authMiddleware, getUserReport);
+router.get("/getreport/:id", getUserReport);
 
 
 router.get("/all-users", getAllUser);

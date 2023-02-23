@@ -344,8 +344,9 @@ const userReport = asyncHandler(async (req, res) => {
 });
 
 const getUserReport = asyncHandler(async (req, res) => {
-    const { _id } = req.user; // by user
-    validatemongoodbId(_id);
+    const { _id } = req.params;
+    console.log(_id); // by user
+    
 
     try {
 
