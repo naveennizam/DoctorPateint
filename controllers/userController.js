@@ -104,7 +104,7 @@ const getAllUser = asyncHandler(async (req, res) => {
 const getaUser = asyncHandler(async (req, res) => {
     const { id } = req.params;
     validatemongoodbId(id);
-    ////console.log(validatemongoodbId(id));
+
     try {
         const getaUser = await User.findById(id);
         res.json({
@@ -243,7 +243,7 @@ const unBlockUser = asyncHandler(async (req, res) => {
 
 const updatePassword = asyncHandler(async (req, res) => {
     const { _id } = req.user;
-    console.log(_id);  //localhost:5000/api/user/password
+    console.log(_id);  
     const { password } = req.body;
     console.log(password);
     validatemongoodbId(_id);
@@ -261,7 +261,7 @@ const updatePassword = asyncHandler(async (req, res) => {
 });
 
 const forgotPasswordToken = asyncHandler(async (req, res) => {
-    const { email } = req.body;  //  localhost:5000/api/user/forgot-password-token
+    const { email } = req.body;  
     const user = await User.findOne({ email });
     if (!user) throw new Error("User not found with this Email")
 
