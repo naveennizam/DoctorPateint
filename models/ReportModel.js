@@ -11,7 +11,7 @@ var ReportSchema = new mongoose.Schema({
             description: String,
         }
     ],
-   
+    patient_Id: String,
     DoctorName : String,
 
     Doctor_ID: {

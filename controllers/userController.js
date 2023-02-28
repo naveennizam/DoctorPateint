@@ -329,7 +329,7 @@ const userReport = asyncHandler(async (req, res) => {
         }
 
         let newReport = await new Report({
-           
+            patient_Id,
             DoctorName: user?.firstname + " " + user?.lastname,
             Doctor_ID: user?._id,
             REPORTS,
