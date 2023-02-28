@@ -4,15 +4,17 @@ const mongoose = require('mongoose'); // Erase if already required
 var ReportSchema = new mongoose.Schema({
     REPORTS: [
         {
+            patient_Id: String,
             patient : String,
             email : String,
             disease: String,
+            description: String,
         }
     ],
-    DoctorName : String,
     patient_Id: String,
+    DoctorName : String,
 
-    Doctor: {
+    Doctor_ID: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User"
     },

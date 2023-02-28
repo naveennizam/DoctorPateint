@@ -317,23 +317,22 @@ const userReport = asyncHandler(async (req, res) => {
         const real = await User.findById(id);  // by user
 
         const patient_Id = (real?.id);
-        // Chexk User already have Product in Report
-        //// const alreadyExistReport = await Report.findOne({patient_Id : real?.id });
 
         for (let i = 0; i < generateReport.length; i++) {
             let object = {};
-
+            object.patient_Id = generateReport[i].patient_Id;
             object.patient = generateReport[i].patient;
             object.email = generateReport[i].email;
             object.disease = generateReport[i].disease;
+            object.description = generateReport[i].description;
             REPORTS.push(object);
         }
 
         let newReport = await new Report({
-            DoctorName: user?.firstname + " " + user?.lastname,
             patient_Id,
+            DoctorName: user?.firstname + " " + user?.lastname,
+            Doctor_ID: user?._id,
             REPORTS,
-          Doctor: user?._id,
 
         }).save();
         res.json(newReport);
@@ -344,12 +343,8 @@ const userReport = asyncHandler(async (req, res) => {
 });
 
 const getUserReport = asyncHandler(async (req, res) => {
-    const { _id } = req.params;
-    console.log(_id); // by user
-    
-
+    const { _id } = req.params; // by user
     try {
-
         const getReport = await Report.find({ patient_Id: _id });
         console.log(getReport);
         res.json(getReport)
