@@ -343,9 +343,10 @@ const userReport = asyncHandler(async (req, res) => {
 });
 
 const getUserReport = asyncHandler(async (req, res) => {
-    const { _id } = req.params; // by user
+    const { id } = req.params; // by user
+    
     try {
-        const getReport = await Report.find({ patient_Id: _id });
+        const getReport = await Report.find({ patient_Id: id });
         console.log(getReport);
         res.json(getReport)
     }
